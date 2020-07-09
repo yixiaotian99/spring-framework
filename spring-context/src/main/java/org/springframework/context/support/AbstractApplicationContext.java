@@ -513,41 +513,47 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		return this.applicationListeners;
 	}
 
+	/**
+	 * 关键方法入口
+	 * @throws BeansException
+	 * @throws IllegalStateException
+	 * @see https://juejin.im/post/5d30410e518825276a6f9a1c
+	 */
 	@Override
 	public void refresh() throws BeansException, IllegalStateException {
 		synchronized (this.startupShutdownMonitor) {
-			// Prepare this context for refreshing.
+			//准备资源，验证必须的属性
 			prepareRefresh();
 
-			// Tell the subclass to refresh the internal bean factory.
+			//创建BeanFactory 加载xml配置的 BeanDefinitionReader 到 Ioc 容器
 			ConfigurableListableBeanFactory beanFactory = obtainFreshBeanFactory();
 
-			// Prepare the bean factory for use in this context.
+			//设置beanFactory的基本属性
 			prepareBeanFactory(beanFactory);
 
 			try {
-				// Allows post-processing of the bean factory in context subclasses.
+				//通知子类来配置 BeanFactory
 				postProcessBeanFactory(beanFactory);
 
-				// Invoke factory processors registered as beans in the context.
+				//调用所有的BeanFactoryPostProcessor 使用的是策略模式，循环所有 BeanFactoryPostProcessor 类型的处理器进行个性化处理
 				invokeBeanFactoryPostProcessors(beanFactory);
 
-				// Register bean processors that intercept bean creation.
+				//注册 BeanPostProceesssors
 				registerBeanPostProcessors(beanFactory);
 
-				// Initialize message source for this context.
+				//初始化 msg source
 				initMessageSource();
 
-				// Initialize event multicaster for this context.
+				//初始化 事件分发器
 				initApplicationEventMulticaster();
 
-				// Initialize other special beans in specific context subclasses.
+				//通知子类刷新容器
 				onRefresh();
 
-				// Check for listener beans and register them.
+				//注册事件监听器
 				registerListeners();
 
-				// Instantiate all remaining (non-lazy-init) singletons.
+				//初始化剩余所有 懒加载 单体Bean
 				finishBeanFactoryInitialization(beanFactory);
 
 				// Last step: publish corresponding event.
@@ -647,7 +653,11 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	protected void prepareBeanFactory(ConfigurableListableBeanFactory beanFactory) {
 		// Tell the internal bean factory to use the context's class loader etc.
 		beanFactory.setBeanClassLoader(getClassLoader());
+
+		//配置 Spring 的 spEL 的解析能力 StandardBeanExpressionResolver
 		beanFactory.setBeanExpressionResolver(new StandardBeanExpressionResolver(beanFactory.getBeanClassLoader()));
+
+
 		beanFactory.addPropertyEditorRegistrar(new ResourceEditorRegistrar(this, getEnvironment()));
 
 		// Configure the bean factory with context callbacks.
